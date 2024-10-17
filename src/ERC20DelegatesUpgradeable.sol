@@ -20,8 +20,7 @@ import {Initializable} from "lib/openzeppelin-contracts-upgradeable/contracts/pr
 /// {delegate} function directly, or by providing a signature to be used with {delegateBySig}. Voting power can be
 /// queried through the public accessor {getVotes}.
 ///
-/// By default, token balance does not account for voting power. This makes transfers cheaper. The downside is that it
-/// requires users to delegate to themselves in order to activate their voting power.
+/// By default, token balance does not account for voting power. This makes transfers cheaper.
 abstract contract ERC20DelegatesUpgradeable is
     Initializable,
     ERC20Upgradeable,
@@ -52,7 +51,7 @@ abstract contract ERC20DelegatesUpgradeable is
     /// @dev Returns the current amount of votes that `account` has.
     function getVotes(address account) public view returns (uint256) {
         ERC20DelegatesStorage storage $ = _getERC20DelegatesStorage();
-        return $._votingPower[account];
+        return delegates(account) == address(0) ? $._votingPower[account] + balanceOf(account) : $._votingPower[account];
     }
 
     /// @dev Returns the delegate that `account` has chosen.
