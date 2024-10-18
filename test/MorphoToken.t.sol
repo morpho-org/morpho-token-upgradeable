@@ -60,12 +60,57 @@ contract MorphoTokenTest is BaseTest {
 
         deal(address(newMorpho), delegator, amount);
 
+        assertEq(newMorpho.getVotes(delegator), amount);
+
         vm.prank(delegator);
         newMorpho.delegate(delegatee);
 
         assertEq(newMorpho.delegates(delegator), delegatee);
         assertEq(newMorpho.getVotes(delegator), 0);
         assertEq(newMorpho.getVotes(delegatee), amount);
+    }
+
+    function testOwnDelegation(address delegator, address delegatee, uint256 amountDelegated, uint256 amountDelegatee)
+        public
+    {
+        address[] memory addresses = new address[](2);
+        addresses[0] = delegator;
+        addresses[1] = delegatee;
+        _validateAddresses(addresses);
+        amountDelegated = bound(amountDelegated, MIN_TEST_AMOUNT, MAX_TEST_AMOUNT);
+        amountDelegatee = bound(amountDelegatee, MIN_TEST_AMOUNT, MAX_TEST_AMOUNT);
+
+        deal(address(newMorpho), delegator, amountDelegated);
+        deal(address(newMorpho), delegatee, amountDelegatee);
+
+        vm.prank(delegator);
+        newMorpho.delegate(delegatee);
+
+        assertEq(newMorpho.delegates(delegator), delegatee);
+        assertEq(newMorpho.getVotes(delegator), 0);
+        assertEq(newMorpho.getVotes(delegatee), amountDelegated + amountDelegatee);
+
+        vm.prank(delegatee);
+        newMorpho.delegate(delegatee);
+
+        assertEq(newMorpho.getVotes(delegatee), amountDelegated + amountDelegatee);
+
+        vm.prank(delegatee);
+        newMorpho.delegate(address(0));
+
+        assertEq(newMorpho.getVotes(delegatee), amountDelegated + amountDelegatee);
+
+        vm.prank(delegatee);
+        newMorpho.delegate(delegator);
+
+        assertEq(newMorpho.getVotes(delegator), amountDelegatee);
+        assertEq(newMorpho.getVotes(delegatee), amountDelegated);
+
+        vm.prank(delegatee);
+        newMorpho.delegate(address(0));
+
+        assertEq(newMorpho.getVotes(delegator), 0);
+        assertEq(newMorpho.getVotes(delegatee), amountDelegated + amountDelegatee);
     }
 
     function testDelegateBySigExpired(SigUtils.Delegation memory delegation, uint256 privateKey, uint256 expiry)
@@ -200,5 +245,11 @@ contract MorphoTokenTest is BaseTest {
 
         assertEq(newMorpho.getVotes(delegatee1), initialAmount - transferredAmount);
         assertEq(newMorpho.getVotes(delegatee2), transferredAmount);
+    }
+
+    function testERC20DelegatesStorageLocation() public pure {
+        bytes32 expected =
+            keccak256(abi.encode(uint256(keccak256("morpho.storage.ERC20Delegates")) - 1)) & ~bytes32(uint256(0xff));
+        assertEq(expected, 0x1dc92b2c6e971ab6e08dfd7dcec0e9496d223ced663ba2a06543451548549500);
     }
 }

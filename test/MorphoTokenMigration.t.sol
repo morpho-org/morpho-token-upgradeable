@@ -47,11 +47,11 @@ contract MorphoTokenMigrationTest is BaseTest {
         new Wrapper(address(0));
     }
 
-    function testTotalSupply() public {
+    function testTotalSupply() public view {
         assertEq(newMorpho.totalSupply(), 1_000_000_000e18);
     }
 
-    function testInitialWrapperBalances() public {
+    function testInitialWrapperBalances() public view {
         assertEq(legacyMorpho.balanceOf(address(wrapper)), 0);
         assertEq(newMorpho.balanceOf(address(wrapper)), 1_000_000_000e18);
     }

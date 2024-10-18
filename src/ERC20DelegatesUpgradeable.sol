@@ -18,10 +18,9 @@ import {Initializable} from "lib/openzeppelin-contracts-upgradeable/contracts/pr
 ///
 /// This extension keeps track of each account's vote power. Vote power can be delegated either by calling the
 /// {delegate} function directly, or by providing a signature to be used with {delegateBySig}. Voting power can be
-/// queried through the public accessor {getVotes}.
+/// queried through the external accessor {getVotes}.
 ///
-/// By default, token balance does not account for voting power. This makes transfers cheaper. The downside is that it
-/// requires users to delegate to themselves in order to activate their voting power.
+/// By default, token balance does not account for voting power. This makes transfers cheaper.
 abstract contract ERC20DelegatesUpgradeable is
     Initializable,
     ERC20Upgradeable,
@@ -44,16 +43,9 @@ abstract contract ERC20DelegatesUpgradeable is
     struct ERC20DelegatesStorage {
         mapping(address account => address) _delegatee;
         mapping(address delegatee => uint256) _votingPower;
-        uint256 _totalVotingPower;
     }
 
     /* PUBLIC */
-
-    /// @dev Returns the current amount of votes that `account` has.
-    function getVotes(address account) public view returns (uint256) {
-        ERC20DelegatesStorage storage $ = _getERC20DelegatesStorage();
-        return $._votingPower[account];
-    }
 
     /// @dev Returns the delegate that `account` has chosen.
     function delegates(address account) public view returns (address) {
@@ -61,14 +53,22 @@ abstract contract ERC20DelegatesUpgradeable is
         return $._delegatee[account];
     }
 
+    /* EXTERNAL */
+
+    /// @dev Returns the current amount of votes that `account` has.
+    function getVotes(address account) external view returns (uint256) {
+        ERC20DelegatesStorage storage $ = _getERC20DelegatesStorage();
+        return delegates(account) == address(0) ? $._votingPower[account] + balanceOf(account) : $._votingPower[account];
+    }
+
     /// @dev Delegates votes from the sender to `delegatee`.
-    function delegate(address delegatee) public {
+    function delegate(address delegatee) external {
         address account = _msgSender();
         _delegate(account, delegatee);
     }
 
     /// @dev Delegates votes from signer to `delegatee`.
-    function delegateBySig(address delegatee, uint256 nonce, uint256 expiry, uint8 v, bytes32 r, bytes32 s) public {
+    function delegateBySig(address delegatee, uint256 nonce, uint256 expiry, uint8 v, bytes32 r, bytes32 s) external {
         if (block.timestamp > expiry) {
             revert DelegatesExpiredSignature(expiry);
         }
@@ -92,19 +92,6 @@ abstract contract ERC20DelegatesUpgradeable is
         _moveDelegateVotes(oldDelegate, delegatee, _getVotingUnits(account));
     }
 
-    /// @dev Transfers, mints, or burns voting units. To register a mint, `from` should be zero. To register a burn, `to`
-    /// should be zero. Total supply of voting units will be adjusted with mints and burns.
-    function _transferVotingUnits(address from, address to, uint256 amount) internal {
-        ERC20DelegatesStorage storage $ = _getERC20DelegatesStorage();
-        if (from == address(0)) {
-            $._totalVotingPower += amount;
-        }
-        if (to == address(0)) {
-            $._totalVotingPower -= amount;
-        }
-        _moveDelegateVotes(delegates(from), delegates(to), amount);
-    }
-
     /// @dev Must return the voting units held by an account.
     function _getVotingUnits(address account) internal view returns (uint256) {
         return balanceOf(account);
@@ -115,7 +102,7 @@ abstract contract ERC20DelegatesUpgradeable is
     function _update(address from, address to, uint256 value) internal virtual override {
         super._update(from, to, value);
         // No check of supply cap here like in OZ implementation as MORPHO has a 1B total supply cap.
-        _transferVotingUnits(from, to, value);
+        _moveDelegateVotes(delegates(from), delegates(to), value);
     }
 
     /* PRIVATE */
