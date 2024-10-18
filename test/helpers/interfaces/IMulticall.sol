@@ -2,7 +2,7 @@
 pragma solidity >=0.5.0;
 
 /// @title IMulticall
-/// @author Morpho Labs
+/// @author Morpho Association
 /// @custom:contact security@morpho.org
 /// @notice Interface of Multicall.
 interface IMulticall {

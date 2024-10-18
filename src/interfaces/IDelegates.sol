@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 /// @title IDelegates
-/// @author Morpho Labs
+/// @author Morpho Association
 /// @custom:contact security@morpho.org
 /// @notice The Delegates interface.
 interface IDelegates {

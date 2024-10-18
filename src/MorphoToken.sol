@@ -12,7 +12,7 @@ import {
 import {UUPSUpgradeable} from "lib/openzeppelin-contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 
 /// @title MorphoToken
-/// @author Morpho Labs
+/// @author Morpho Association
 /// @custom:contact security@morpho.org
 /// @notice The MORPHO Token contract.
 contract MorphoToken is ERC20DelegatesUpgradeable, ERC20PermitUpgradeable, Ownable2StepUpgradeable, UUPSUpgradeable {
@@ -36,7 +36,6 @@ contract MorphoToken is ERC20DelegatesUpgradeable, ERC20PermitUpgradeable, Ownab
     /// @param wrapper The wrapper contract address to migrate legacy MORPHO tokens to the new one.
     function initialize(address dao, address wrapper) public initializer {
         require(dao != address(0), ZeroAddress());
-        require(wrapper != address(0), ZeroAddress());
 
         ERC20Upgradeable.__ERC20_init(NAME, SYMBOL);
         Ownable2StepUpgradeable.__Ownable2Step_init();

@@ -12,13 +12,13 @@ import {EIP712Upgradeable} from
 import {Initializable} from "lib/openzeppelin-contracts-upgradeable/contracts/proxy/utils/Initializable.sol";
 
 /// @title ERC20DelegatesUpgradeable
-/// @author Morpho Labs
+/// @author Morpho Association
 /// @custom:contact security@morpho.org
 /// @dev Extension of ERC20 to support token delegation.
 ///
 /// This extension keeps track of each account's vote power. Vote power can be delegated either by calling the
 /// {delegate} function directly, or by providing a signature to be used with {delegateBySig}. Voting power can be
-/// queried through the public accessor {getVotes}.
+/// queried through the external accessor {getVotes}.
 ///
 /// By default, token balance does not account for voting power. This makes transfers cheaper. The downside is that it
 /// requires users to delegate to themselves in order to activate their voting power.
@@ -49,26 +49,28 @@ abstract contract ERC20DelegatesUpgradeable is
 
     /* PUBLIC */
 
-    /// @dev Returns the current amount of votes that `account` has.
-    function getVotes(address account) public view returns (uint256) {
-        ERC20DelegatesStorage storage $ = _getERC20DelegatesStorage();
-        return $._votingPower[account];
-    }
-
     /// @dev Returns the delegate that `account` has chosen.
     function delegates(address account) public view returns (address) {
         ERC20DelegatesStorage storage $ = _getERC20DelegatesStorage();
         return $._delegatee[account];
     }
 
+    /* EXTERNAL */
+
+    /// @dev Returns the current amount of votes that `account` has.
+    function getVotes(address account) external view returns (uint256) {
+        ERC20DelegatesStorage storage $ = _getERC20DelegatesStorage();
+        return $._votingPower[account];
+    }
+
     /// @dev Delegates votes from the sender to `delegatee`.
-    function delegate(address delegatee) public {
+    function delegate(address delegatee) external {
         address account = _msgSender();
         _delegate(account, delegatee);
     }
 
     /// @dev Delegates votes from signer to `delegatee`.
-    function delegateBySig(address delegatee, uint256 nonce, uint256 expiry, uint8 v, bytes32 r, bytes32 s) public {
+    function delegateBySig(address delegatee, uint256 nonce, uint256 expiry, uint8 v, bytes32 r, bytes32 s) external {
         if (block.timestamp > expiry) {
             revert DelegatesExpiredSignature(expiry);
         }
