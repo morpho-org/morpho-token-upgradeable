@@ -3,10 +3,13 @@ pragma solidity ^0.8.0;
 
 import {Test, console} from "../lib/forge-std/src/Test.sol";
 import {MorphoTokenOptimism} from "../src/MorphoTokenOptimism.sol";
+import {DelegationToken} from "../src/DelegationToken.sol";
 import {ERC1967Proxy} from
     "../lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {UUPSUpgradeable} from "../lib/openzeppelin-contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import {OwnableUpgradeable} from "../lib/openzeppelin-contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import {ERC1967Utils} from
+    "../lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Utils.sol";
 
 contract MorphoTokenOptimismTest is Test {
     address internal constant MORPHO_DAO = 0xcBa28b38103307Ec8dA98377ffF9816C164f9AFa;
@@ -55,6 +58,8 @@ contract MorphoTokenOptimismTest is Test {
     function testUpgrade() public {
         address newImplem = address(new MorphoTokenOptimism(REMOTE_TOKEN, BRIDGE));
 
+        vm.expectEmit(address(morphoOptimism));
+        emit ERC1967Utils.Upgraded(newImplem);
         vm.prank(MORPHO_DAO);
         morphoOptimism.upgradeToAndCall(newImplem, hex"");
     }
@@ -83,6 +88,8 @@ contract MorphoTokenOptimismTest is Test {
         assertEq(morphoOptimism.totalSupply(), 0, "totalSupply");
         assertEq(morphoOptimism.balanceOf(to), 0, "balanceOf(account)");
 
+        vm.expectEmit(address(morphoOptimism));
+        emit DelegationToken.Mint(to, amount);
         vm.prank(BRIDGE);
         morphoOptimism.mint(to, amount);
 
@@ -108,6 +115,9 @@ contract MorphoTokenOptimismTest is Test {
 
         vm.startPrank(BRIDGE);
         morphoOptimism.mint(from, amountMinted);
+
+        vm.expectEmit(address(morphoOptimism));
+        emit DelegationToken.Burn(from, amountBurned);
         morphoOptimism.burn(from, amountBurned);
         vm.stopPrank();
 

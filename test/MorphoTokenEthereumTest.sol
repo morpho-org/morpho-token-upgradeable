@@ -8,6 +8,8 @@ import {DelegationToken} from "../src/DelegationToken.sol";
 import {IERC20Errors} from
     "../lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/interfaces/draft-IERC6093.sol";
 import {OwnableUpgradeable} from "../lib/openzeppelin-contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import {ERC1967Utils} from
+    "../lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Utils.sol";
 import {ERC1967Proxy} from
     "../lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
@@ -38,6 +40,8 @@ contract MorphoTokenEthereumTest is BaseTest {
     function testUpgrade() public {
         address newImplem = address(new MorphoTokenEthereum());
 
+        vm.expectEmit(address(newMorpho));
+        emit ERC1967Utils.Upgraded(newImplem);
         vm.prank(MORPHO_DAO);
         newMorpho.upgradeToAndCall(newImplem, hex"");
     }
@@ -65,6 +69,9 @@ contract MorphoTokenEthereumTest is BaseTest {
 
         deal(address(newMorpho), delegator, amount);
 
+        vm.expectEmit(address(newMorpho));
+        emit DelegationToken.DelegateeChanged(delegator, address(0), delegatee);
+        emit DelegationToken.DelegatedVotingPowerChanged(delegatee, 0, amount);
         vm.prank(delegator);
         newMorpho.delegate(delegatee);
 
@@ -138,6 +145,9 @@ contract MorphoTokenEthereumTest is BaseTest {
         bytes32 digest = SigUtils.getDelegationTypedDataHash(delegation, address(newMorpho));
         (sig.v, sig.r, sig.s) = vm.sign(privateKey, digest);
 
+        vm.expectEmit(address(newMorpho));
+        emit DelegationToken.DelegateeChanged(delegator, address(0), delegation.delegatee);
+        emit DelegationToken.DelegatedVotingPowerChanged(delegation.delegatee, 0, amount);
         newMorpho.delegateWithSig(delegation.delegatee, delegation.nonce, delegation.expiry, sig.v, sig.r, sig.s);
 
         assertEq(newMorpho.delegatee(delegator), delegation.delegatee);
@@ -191,9 +201,15 @@ contract MorphoTokenEthereumTest is BaseTest {
         deal(address(newMorpho), delegator1, amount1);
         deal(address(newMorpho), delegator2, amount2);
 
+        vm.expectEmit(address(newMorpho));
+        emit DelegationToken.DelegateeChanged(delegator1, address(0), delegatee);
+        emit DelegationToken.DelegatedVotingPowerChanged(delegatee, 0, amount1);
         vm.prank(delegator1);
         newMorpho.delegate(delegatee);
 
+        vm.expectEmit(address(newMorpho));
+        emit DelegationToken.DelegateeChanged(delegator2, address(0), delegatee);
+        emit DelegationToken.DelegatedVotingPowerChanged(delegatee, amount1, amount1 + amount2);
         vm.prank(delegator2);
         newMorpho.delegate(delegatee);
 
@@ -224,6 +240,10 @@ contract MorphoTokenEthereumTest is BaseTest {
 
         vm.startPrank(delegator1);
         newMorpho.delegate(delegatee1);
+
+        vm.expectEmit(address(newMorpho));
+        emit DelegationToken.DelegatedVotingPowerChanged(delegatee1, initialAmount, initialAmount - transferredAmount);
+        emit DelegationToken.DelegatedVotingPowerChanged(delegatee2, 0, transferredAmount);
         newMorpho.transfer(delegator2, transferredAmount);
         vm.stopPrank();
 
@@ -238,6 +258,8 @@ contract MorphoTokenEthereumTest is BaseTest {
         uint256 initialTotalSupply = newMorpho.totalSupply();
         uint256 initialAmount = newMorpho.balanceOf(to);
 
+        vm.expectEmit(address(newMorpho));
+        emit DelegationToken.Mint(to, amount);
         vm.prank(MORPHO_DAO);
         newMorpho.mint(to, amount);
 
@@ -275,6 +297,8 @@ contract MorphoTokenEthereumTest is BaseTest {
         vm.prank(MORPHO_DAO);
         newMorpho.mint(from, amountMinted);
 
+        vm.expectEmit(address(newMorpho));
+        emit DelegationToken.Burn(from, amountBurned);
         vm.prank(from);
         newMorpho.burn(amountBurned);
 
