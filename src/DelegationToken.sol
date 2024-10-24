@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.27;
 
-import {IDelegation} from "./interfaces/IDelegation.sol";
+import {IDelegation, Signature, Delegation} from "./interfaces/IDelegation.sol";
 
 import {ERC20PermitUpgradeable} from
     "../lib/openzeppelin-contracts-upgradeable/contracts/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
@@ -45,7 +45,7 @@ abstract contract DelegationToken is IDelegation, ERC20PermitUpgradeable, Ownabl
     /* ERRORS */
 
     /// @notice The signature used has expired.
-    error DelegatesExpiredSignature(uint256 expiry);
+    error DelegatesExpiredSignature();
 
     /// @notice The delegation nonce used by the signer is not its current delegation nonce.
     error InvalidDelegationNonce();
@@ -104,18 +104,20 @@ abstract contract DelegationToken is IDelegation, ERC20PermitUpgradeable, Ownabl
     /// @notice Delegates the balance of the signer to `newDelegatee`.
     /// @dev Delegating to the zero address effectively removes the delegation, incidentally making transfers cheaper.
     /// @dev Delegating to the previous delegatee effectively revokes past signatures with the same nonce.
-    function delegateWithSig(address newDelegatee, uint256 nonce, uint256 expiry, uint8 v, bytes32 r, bytes32 s)
-        external
-    {
-        require(block.timestamp <= expiry, DelegatesExpiredSignature(expiry));
+    function delegateWithSig(Delegation memory delegation, Signature calldata signature) external {
+        require(block.timestamp <= delegation.expiry, DelegatesExpiredSignature());
+
         address delegator = ECDSA.recover(
-            _hashTypedDataV4(keccak256(abi.encode(DELEGATION_TYPEHASH, newDelegatee, nonce, expiry))), v, r, s
+            _hashTypedDataV4(keccak256(abi.encode(DELEGATION_TYPEHASH, delegation))),
+            signature.v,
+            signature.r,
+            signature.s
         );
 
         DelegationTokenStorage storage $ = _getDelegationTokenStorage();
-        require(nonce == $._delegationNonce[delegator]++, InvalidDelegationNonce());
+        require(delegation.nonce == $._delegationNonce[delegator]++, InvalidDelegationNonce());
 
-        _delegate(delegator, newDelegatee);
+        _delegate(delegator, delegation.delegatee);
     }
 
     /* INTERNAL */

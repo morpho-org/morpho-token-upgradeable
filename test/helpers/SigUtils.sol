@@ -3,22 +3,17 @@ pragma solidity ^0.8.0;
 
 import {IERC5267} from
     "../../lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/interfaces/IERC5267.sol";
+import {Delegation, Signature} from "../../src/DelegationToken.sol";
+
+struct Permit {
+    address owner;
+    address spender;
+    uint256 value;
+    uint256 nonce;
+    uint256 deadline;
+}
 
 library SigUtils {
-    struct Delegation {
-        address delegatee;
-        uint256 nonce;
-        uint256 expiry;
-    }
-
-    struct Permit {
-        address owner;
-        address spender;
-        uint256 value;
-        uint256 nonce;
-        uint256 deadline;
-    }
-
     bytes32 internal constant DELEGATION_TYPEHASH =
         keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
 

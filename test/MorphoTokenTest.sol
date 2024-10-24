@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {BaseTest} from "./helpers/BaseTest.sol";
-import {SigUtils} from "./helpers/SigUtils.sol";
+import {SigUtils, Delegation, Permit, Signature} from "./helpers/SigUtils.sol";
 import {MorphoTokenEthereum} from "../src/MorphoTokenEthereum.sol";
 import {ERC1967Proxy} from
     "../lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
@@ -68,9 +68,7 @@ contract MorphoTokenEthereumTest is BaseTest {
         assertEq(newMorpho.delegatedVotingPower(delegatee), amount);
     }
 
-    function testDelegateBySigExpired(SigUtils.Delegation memory delegation, uint256 privateKey, uint256 expiry)
-        public
-    {
+    function testDelegateBySigExpired(Delegation memory delegation, uint256 privateKey, uint256 expiry) public {
         expiry = bound(expiry, MAX_TEST_AMOUNT, MAX_TEST_AMOUNT);
         privateKey = bound(privateKey, 1, type(uint32).max);
         address delegator = vm.addr(privateKey);
@@ -90,12 +88,10 @@ contract MorphoTokenEthereumTest is BaseTest {
         vm.warp(expiry + 1);
 
         vm.expectRevert();
-        newMorpho.delegateWithSig(delegation.delegatee, delegation.nonce, delegation.expiry, sig.v, sig.r, sig.s);
+        newMorpho.delegateWithSig(delegation, sig);
     }
 
-    function testDelegateBySigWrongNonce(SigUtils.Delegation memory delegation, uint256 privateKey, uint256 nounce)
-        public
-    {
+    function testDelegateBySigWrongNonce(Delegation memory delegation, uint256 privateKey, uint256 nounce) public {
         vm.assume(nounce != 0);
         privateKey = bound(privateKey, 1, type(uint32).max);
         address delegator = vm.addr(privateKey);
@@ -113,10 +109,10 @@ contract MorphoTokenEthereumTest is BaseTest {
         (sig.v, sig.r, sig.s) = vm.sign(privateKey, digest);
 
         vm.expectRevert();
-        newMorpho.delegateWithSig(delegation.delegatee, delegation.nonce, delegation.expiry, sig.v, sig.r, sig.s);
+        newMorpho.delegateWithSig(delegation, sig);
     }
 
-    function testDelegateBySig(SigUtils.Delegation memory delegation, uint256 privateKey, uint256 amount) public {
+    function testDelegateBySig(Delegation memory delegation, uint256 privateKey, uint256 amount) public {
         privateKey = bound(privateKey, 1, type(uint32).max);
         address delegator = vm.addr(privateKey);
 
@@ -136,7 +132,7 @@ contract MorphoTokenEthereumTest is BaseTest {
         bytes32 digest = SigUtils.getDelegationTypedDataHash(delegation, address(newMorpho));
         (sig.v, sig.r, sig.s) = vm.sign(privateKey, digest);
 
-        newMorpho.delegateWithSig(delegation.delegatee, delegation.nonce, delegation.expiry, sig.v, sig.r, sig.s);
+        newMorpho.delegateWithSig(delegation, sig);
 
         assertEq(newMorpho.delegatee(delegator), delegation.delegatee);
         assertEq(newMorpho.delegatedVotingPower(delegator), 0);
@@ -145,7 +141,7 @@ contract MorphoTokenEthereumTest is BaseTest {
         assertEq(newMorpho.nonces(delegator), 0);
     }
 
-    function testPermitNotIncrementingNonce(SigUtils.Permit memory permit, uint256 privateKey) public {
+    function testPermitNotIncrementingNonce(Permit memory permit, uint256 privateKey) public {
         privateKey = bound(privateKey, 1, type(uint32).max);
         permit.owner = vm.addr(privateKey);
 
