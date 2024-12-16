@@ -68,7 +68,6 @@ rule mint(env e) {
 
     // cache state
     uint256 toBalanceBefore    = balanceOf(to);
-    uint256 toVotingPowerBefore = delegatedVotingPower(delegatee(to));
     uint256 otherBalanceBefore = balanceOf(other);
     uint256 totalSupplyBefore  = totalSupply();
 
@@ -78,7 +77,7 @@ rule mint(env e) {
     // check outcome
     if (lastReverted) {
         assert e.msg.sender != owner() || to == 0 || totalSupplyBefore + amount > max_uint256 ||
-            toVotingPowerBefore + amount > max_uint256 || e.msg.sender != currentContract.bridge;
+            e.msg.sender != currentContract.bridge;
     } else {
         // updates balance and totalSupply
         assert e.msg.sender == currentContract.bridge;

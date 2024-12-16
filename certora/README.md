@@ -51,7 +51,7 @@ The [`certora/specs`](specs) folder contains the following files:
 - [`ExternalCalls.spec`](specs/ExternalCalls.spec) checks that the Morpho token implementation is reentrancy safe by ensuring that no function is making and external calls and, that the implementation is immutable as it doesn't perform any delegate call;
 - [`ERC20Invariants.spec`](specs/ERC20Invariants.spec) common hooks and invariants to be shared in different specs;
 - [`ERC20.spec`](specs/ERC20.spec) ensures that the Morpho token is compliant with the [ERC20](https://eips.ethereum.org/EIPS/eip-20) specification, we also check Morpho token `burn` and `mint` functions in [`MintBurnEthereum`](specs/MintBurnEthereum.spec) and [`MintBurnOptimism`](specs/MintBurnOptimism.spec);
-- [`Delegation.spec`](specs/Delegation.spec) checks the logic for voting power delegation.
+- [`Delegation.spec`](specs/Delegation.spec) checks the logic for voting power delegation;
 - [`RevertsERC20.spec`](specs/RevertsERC20.spec), [`RevertsMintBurnEthereum.spec`](specs/RevertsMintBurnEthereum.spec) and [`RevertsMintBurnOptimism.spec`](specs/RevertsMintBurnOptimism.spec) check that conditions for reverts and inputs are correctly validated.
 
 The [`certora/confs`](confs) folder contains a configuration file for each corresponding specification file for both the Ethereum and the Optimism version.

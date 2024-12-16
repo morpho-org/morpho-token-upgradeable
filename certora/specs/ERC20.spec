@@ -87,14 +87,17 @@ rule transfer(env e) {
     uint256 recipientVotingPowerBefore = delegatedVotingPower(delegatee(recipient));
     uint256 otherBalanceBefore     = balanceOf(other);
 
+    // Safe require as it is verified in delegatedLTEqDelegateeVP.
+    require holderBalanceBefore <= holderVotingPowerBefore;
+    // Safe require as it is verified in totalSupplyGTEqSumOfVotingPower.
+    require delegatee(holder) != delegatee(recipient) => holderBalanceBefore + recipientVotingPowerBefore <= totalSupply();
+
     // run transaction
     transfer@withrevert(e, recipient, amount);
 
     // check outcome
     if (lastReverted) {
-        assert holder == 0 || recipient == 0 || amount > holderBalanceBefore ||
-            // Handle overflows in delegation, should not be possible.
-            recipientVotingPowerBefore + amount > max_uint256 || holderVotingPowerBefore < amount ;
+        assert holder == 0 || recipient == 0 || amount > holderBalanceBefore;
     } else {
         // balances of holder and recipient are updated
         assert to_mathint(balanceOf(holder))    == holderBalanceBefore    - (holder == recipient ? 0 : amount);
@@ -129,14 +132,17 @@ rule transferFrom(env e) {
     uint256 recipientVotingPowerBefore = delegatedVotingPower(delegatee(recipient));
     uint256 otherBalanceBefore     = balanceOf(other);
 
+    // Safe require as it is verified in delegatedLTEqDelegateeVP.
+    require holderBalanceBefore <= holderVotingPowerBefore;
+    // Safe require as it is verified in totalSupplyGTEqSumOfVotingPower.
+    require delegatee(holder) != delegatee(recipient) => holderBalanceBefore + recipientVotingPowerBefore <= totalSupply();
+
     // run transaction
     transferFrom@withrevert(e, holder, recipient, amount);
 
     // check outcome
     if (lastReverted) {
-        assert holder == 0 || recipient == 0 || spender == 0 || amount > holderBalanceBefore || amount > allowanceBefore
-            // Handle overflows in delegation, should not be possible.
-            ||  amount + recipientVotingPowerBefore > max_uint256 || holderVotingPowerBefore < amount ;
+        assert holder == 0 || recipient == 0 || spender == 0 || amount > holderBalanceBefore || amount > allowanceBefore;
     } else {
         // allowance is valid & updated
         assert allowanceBefore            >= amount;
